@@ -1,0 +1,1 @@
+[{"model": "data.usertype", "pk": 1, "fields": {"user_type": "therapist", "description": "Therapist role."}}, {"model": "data.usertype", "pk": 2, "fields": {"user_type": "patient", "description": "Rol de paciente."}}]
