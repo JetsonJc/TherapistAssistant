@@ -25,7 +25,10 @@ env = environ.Env(
     DB_PASSWORD=(str,''),
     DB_HOST=(str,''),
     DB_PORT=(str,''),    
-    SECRET_KEY=(str,'')
+    SECRET_KEY=(str,''),
+    AZURE_STORAGE_KEY=(str,''),
+    AZURE_STORAGE_CONNECTION_STRING=(str,''),
+    AZURE_CONTAINER=(str,''),
 )
 
 # reading .env file
@@ -45,6 +48,10 @@ ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 # Cors configuration
 CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')
 
+#Azure configuration
+AZURE_STORAGE_KEY = env('AZURE_STORAGE_KEY')
+AZURE_STORAGE_CONNECTION_STRING = env('AZURE_STORAGE_CONNECTION_STRING')
+AZURE_CONTAINER = env("AZURE_CONTAINER")
 # Application definition
 INSTALLED_APPS = [
     #'django.contrib.admin',
