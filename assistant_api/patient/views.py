@@ -158,7 +158,11 @@ class PatientRoutineDetail(APIView):
 
     def get_object(self, patient_id, routine_id):
         try:
-            return PatientRoutine.objects.filter(patient=patient_id, routine=routine_id).first()
+            patients = PatientRoutine.objects.filter(patient=patient_id, routine=routine_id).first()
+            if patients:
+                return patients
+            else:
+                raise Http404
         except PatientRoutine.DoesNotExist:
             raise Http404
 
