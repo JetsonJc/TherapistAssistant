@@ -1,1 +1,2 @@
 SECRET_KEY_PASS="PASS2021"
+PATH="documents/"
