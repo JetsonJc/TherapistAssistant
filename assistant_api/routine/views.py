@@ -57,18 +57,21 @@ class RoutineList(APIView, PaginationHandlerMixin):
         }
     )
     def post(self, request, format=None):
-        serializer = RoutineInsertSerializer(data=request.data)
-        if serializer.is_valid():
-            with transaction.atomic():
-                routine = serializer.save()
-                for exercise_id in request.data['exercises']:
-                    data = {
-                    "exercise":exercise_id,
-                    "routine":routine.id
-                    }
-                    self.post_exercise_routines(data)
-                return Response(status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = RoutineInsertSerializer(data=request.data)
+            if serializer.is_valid():
+                with transaction.atomic():
+                    routine = serializer.save()
+                    for exercise_id in request.data['exercises']:
+                        data = {
+                        "exercise":exercise_id,
+                        "routine":routine.id
+                        }
+                        self.post_exercise_routines(data)
+                    return Response(status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as err:
+            return Response(data=err, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RoutineDetail(APIView):
