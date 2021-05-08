@@ -7,7 +7,6 @@ from utility.storage import post_document
 
 class DocumentDetail(APIView):
     @swagger_auto_schema(
-        #request_body='completar',
         responses={
             status.HTTP_200_OK: "response"
         }
