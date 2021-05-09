@@ -4,16 +4,19 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from utility.storage import post_document, get_document
+from .serializers import *
 
 class DocumentDetail(APIView):
     @swagger_auto_schema(
-        #request_body='completar',
+        query_serializer=FileSerializer,
         responses={
-            status.HTTP_200_OK: "response"
+            status.HTTP_200_OK: FileResponseSerializer
         }
     )
-    def post(self, request, format=None):
-        name = "documents/1/video.mp4"
-        from django.http import StreamingHttpResponse
-        document = get_document(name)
-        return Response(document)
+    def get(self, request, format=None):
+        try:
+            path = request.GET["path"]
+            document = get_document(path)
+            return Response({"file":document})
+        except Exception as err:
+            return Response(data=err.args, status=status.HTTP_400_BAD_REQUEST)

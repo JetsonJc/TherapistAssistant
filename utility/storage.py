@@ -1,4 +1,5 @@
 import os, uuid
+import base64
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, __version__
 from setting.settings import (
     AZURE_STORAGE_CONNECTION_STRING,
@@ -38,15 +39,14 @@ def get_document(path):
         # Create a unique name for the container
         container_name = AZURE_CONTAINER
 
-        #downloader = blob_client.download_blob(0)
-        #blob = pickle.loads(downloader.readall())
         # Create a blob client using the local file name as the name for the blob
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=path)
-        with open("./video.mp4", "wb") as my_blob:
-            blob_data = blob_client.download_blob()
-            blob_data.readinto(my_blob)
+        blob_data = blob_client.download_blob()
+        filem = blob_data.content_as_bytes()
+        base64_encoded_data = base64.b64encode(filem)
+        base64_file = base64_encoded_data.decode('utf-8')
 
-        return "blob_data"
+        return base64_file
     except Exception as ex:
         print('Exception:')
         print(ex)
