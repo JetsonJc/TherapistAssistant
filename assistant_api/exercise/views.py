@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.http import Http404
 from drf_yasg2.utils import swagger_auto_schema
 from rest_framework.views import APIView
@@ -10,7 +11,6 @@ from utility.pagination import (
     Paginator,
 )
 from utility.serializers import PaginatorSerializer
-
 
 class ExerciseList(APIView, PaginationHandlerMixin):
     pagination_class = Paginator
@@ -41,8 +41,13 @@ class ExerciseList(APIView, PaginationHandlerMixin):
     def post(self, request, format=None):
         serializer = ExerciseListSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
+            with transaction.atomic():
+                exercise = serializer.save()
+                exercise_id = exercise.id
+                #file_obj = request.FILES['file']
+                #name = f"{str(exercise_id)}/video"
+                #post_document(name, file_obj)
+                return Response(status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
