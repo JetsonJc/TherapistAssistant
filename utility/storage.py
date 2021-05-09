@@ -29,18 +29,24 @@ def post_document(name, document):
         print(ex)
 
 
-def get_document(path, document):
+def get_document(path):
     try:
         connect_str = AZURE_STORAGE_CONNECTION_STRING
         # Create the BlobServiceClient object which will be used to create a container client
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+
         # Create a unique name for the container
         container_name = AZURE_CONTAINER
+
+        #downloader = blob_client.download_blob(0)
+        #blob = pickle.loads(downloader.readall())
         # Create a blob client using the local file name as the name for the blob
-        blob_client = blob_service_client.get_blob_client(container=container_name, blob=path)        
-        # Upload the created file
-        document.seek(0)
-        blob_client.upload_blob(document.read())
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=path)
+        with open("./video.mp4", "wb") as my_blob:
+            blob_data = blob_client.download_blob()
+            blob_data.readinto(my_blob)
+
+        return "blob_data"
     except Exception as ex:
         print('Exception:')
         print(ex)
