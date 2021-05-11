@@ -1,2 +1,3 @@
 SECRET_KEY_PASS="PASS2021"
-PATH="documents/"
+PATH_EXERCISES="documents/exercises/"
+PATH_PATIENT_EXERCISES="documents/patients/"
