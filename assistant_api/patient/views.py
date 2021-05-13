@@ -1,7 +1,10 @@
+from datetime import date
 from drf_yasg2 import openapi
 from drf_yasg2.utils import swagger_auto_schema
+from django.db import transaction
 from django.http import Http404
 from django.utils.decorators import method_decorator
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -16,6 +19,8 @@ from utility.pagination import (
     Paginator,
 )
 from utility.serializers import PaginatorSerializer
+from utility.storage import post_document
+from utility.constant import PATH_PATIENT_RESULTS
 
 
 @method_decorator(
@@ -37,18 +42,38 @@ class PatientResultsList(ListAPIView, PaginationHandlerMixin):
 
 
 class PatientResultsCreate(APIView):
+    def _get_object(self, id):
+        try:
+            return PatientRoutine.objects.get(pk=id)
+        except ResultExercise.DoesNotExist:
+            raise Http404
+
     @swagger_auto_schema(
-        request_body=PatientResultsInsertSerializer,
+        request_body=PatientResultsInsertRequestSerializer,
         responses={
             status.HTTP_201_CREATED: 'If the request was successful, nothing is returned.'
         }
     )
     def post(self, request, format=None):
-        serializer = PatientResultsInsertSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = PatientResultsInsertRequestSerializer(data=request.data)
+            if serializer.is_valid():
+                with transaction.atomic():
+                    patient = self._get_object(request.data["patient_routine"])
+                    full_date = date.today().strftime("%d%m%Y")
+                    video = request.FILES['video']
+                    points = request.FILES['points']
+                    feedback = request.FILES['feedback']
+                    request.data["path_video"] = post_document(f'{PATH_PATIENT_RESULTS}{str(patient.id)}/{full_date}/video', video)
+                    request.data["path_points"] = post_document(f'{PATH_PATIENT_RESULTS}{str(patient.id)}/{full_date}/points', points)
+                    request.data["path_feedback"] = post_document(f'{PATH_PATIENT_RESULTS}{str(patient.id)}/{full_date}/feedback', feedback)
+                    serializer = PatientResultsInsertSerializer(data=request.data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as err:
+            raise ValidationError(err.args)
 
 
 class PatientResultsDetail(APIView):

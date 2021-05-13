@@ -18,6 +18,7 @@ __all__ = (
     'PatientCompleteRoutinesDocSerializer',
     'PatientResultsDocSerializer',
     'PatientRoutinesDocSerializer',
+    'PatientResultsInsertRequestSerializer',
 )
 
 
@@ -37,6 +38,15 @@ class PatientResultsInsertSerializer(serializers.ModelSerializer):
     class Meta:
         model = ResultExercise
         fields = '__all__'
+
+
+class PatientResultsInsertRequestSerializer(serializers.ModelSerializer):
+    video = serializers.FileField(help_text="Video del ejercicio.")
+    points =  serializers.FileField(help_text="Points(JSON) del ejercicio.")
+    feedback =  serializers.FileField(help_text="Feedback(JSON) del ejercicio.")
+    class Meta:
+        model = ResultExercise
+        exclude = ('id', 'created_at', 'path_video', 'path_points', 'path_feedback')
 
 
 class PatientResultsUpdateSerializer(serializers.ModelSerializer):
