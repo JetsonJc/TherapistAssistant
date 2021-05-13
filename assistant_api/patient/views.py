@@ -19,7 +19,10 @@ from utility.pagination import (
     Paginator,
 )
 from utility.serializers import PaginatorSerializer
-from utility.storage import post_document
+from utility.storage import (
+    post_document,
+    delete_document,
+)
 from utility.constant import PATH_PATIENT_RESULTS
 
 
@@ -45,7 +48,7 @@ class PatientResultsCreate(APIView):
     def _get_object(self, id):
         try:
             return PatientRoutine.objects.get(pk=id)
-        except ResultExercise.DoesNotExist:
+        except PatientRoutine.DoesNotExist:
             raise Http404
 
     @swagger_auto_schema(
@@ -119,9 +122,16 @@ class PatientResultsDetail(APIView):
         }
     )
     def delete(self, request, result_exercise_id, format=None):
-        patient_results = self.get_object(result_exercise_id)
-        patient_results.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            with transaction.atomic():
+                patient_results = self.get_object(result_exercise_id)
+                delete_document(patient_results.path_video)
+                delete_document(patient_results.path_points)
+                delete_document(patient_results.path_feedback)
+                patient_results.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as err:
+            raise ValidationError(err.args)
 
 
 @method_decorator(

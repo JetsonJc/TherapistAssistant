@@ -29,6 +29,7 @@ def post_document(name, document):
     except Exception as ex:
         print('Exception:')
         print(ex)
+        raise ValidationError(ex)
 
 
 def get_document(path):
@@ -71,5 +72,23 @@ def get_document(path):
         return filem
     except Exception as ex:
         print('Exception.....:')
+        print(ex)
+        raise ValidationError(ex)
+
+
+def delete_document(path):
+    try:
+        connect_str = AZURE_STORAGE_CONNECTION_STRING
+        # Create the BlobServiceClient object which will be used to create a container client
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        # Create a unique name for the container
+        container_name = AZURE_CONTAINER
+        # Create a blob client using the local file name as the name for the blob
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=path)
+        # Delete
+        blob_client.delete_blob()
+        return True
+    except Exception as ex:
+        print('Exception:')
         print(ex)
         raise ValidationError(ex)

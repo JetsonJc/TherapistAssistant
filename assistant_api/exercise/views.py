@@ -12,7 +12,10 @@ from utility.pagination import (
     Paginator,
 )
 from utility.serializers import PaginatorSerializer
-from utility.storage import post_document
+from utility.storage import (
+    post_document,
+    delete_document,
+)
 from utility.constant import PATH_EXERCISES
 
 class ExerciseList(APIView, PaginationHandlerMixin):
@@ -108,6 +111,12 @@ class ExerciseDetail(APIView):
         }
     )
     def delete(self, request, exercise_id, format=None):
-        exercise = self.get_object(exercise_id)
-        exercise.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            with transaction.atomic():
+                exercise = self.get_object(exercise_id)
+                delete_document(exercise.path_video)
+                delete_document(exercise.path_points)
+                exercise.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as err:
+            raise ValidationError(err.args)
