@@ -43,33 +43,11 @@ def get_document(path):
 
         # Create a blob client using the local file name as the name for the blob
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=path)
-        blob_data = blob_client.download_blob()
-        filem = blob_data.content_as_text(encoding='utf-8')
-        print("dir..............",dir(filem))
-        print("tipo.....",type(filem))
-        import io
-        buffer = io.BytesIO()
-        #print(buffer)
-        #print("dirbuffer...",dir(buffer))
 
-        ##blob_data.readinto(buffer)
-        #with buffer as my_blob:
-        #    blob_data = blob_client.download_blob()
-        #    blob_data.readinto(my_blob)
-        #print(buffer)
-        #print("toooodd...",dir(blob_data))
-        ##print("intoooo...",dir(filem))
-        #print("valor.....",dir(buffer))
-        #k = open(buffer.getvalue(), 'r')
-        #print(k)
+        with open("file/file.pdf", "wb") as download_file:
+            download_file.write(blob_client.download_blob().readall())
 
-
-        #base64_encoded_data = base64.b64encode(filem)
-        ##base64_file = base64_encoded_data.decode('utf-8')
-        #buffer.write(base64_encoded_data)
-        #content = buffer.getvalue()
-        #buffer.close()
-        return filem
+        return True
     except Exception as ex:
         print('Exception.....:')
         print(ex)

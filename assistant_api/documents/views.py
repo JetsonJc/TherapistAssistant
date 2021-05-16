@@ -1,5 +1,6 @@
 from drf_yasg2.utils import swagger_auto_schema
 from rest_framework import status
+from rest_framework import response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -15,8 +16,15 @@ class DocumentDetail(APIView):
     )
     def get(self, request, format=None):
         try:
+            from wsgiref.util import FileWrapper
+            from django.http import HttpResponse
             path = request.GET["path"]
-            document = get_document(path)
-            return Response({"file":document})
+            get_document(path)
+            with open("file/file.pdf", 'r') as f:
+                file_data = f.read()
+
+            response = HttpResponse(file_data, content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="file.pdf"'
+            return response
         except Exception as err:
-            return Response(data=err.args, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(err.args)
