@@ -1,5 +1,4 @@
-import os, uuid
-import base64
+import os
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, __version__
 from rest_framework.exceptions import ValidationError
 from setting.settings import (
