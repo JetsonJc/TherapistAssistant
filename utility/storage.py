@@ -44,10 +44,9 @@ def get_document(path):
         # Create a blob client using the local file name as the name for the blob
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=path)
 
-        with open("file/file.pdf", "wb") as download_file:
-            download_file.write(blob_client.download_blob().readall())
+        content = blob_client.download_blob().readall()
 
-        return True
+        return content
     except Exception as ex:
         print('Exception.....:')
         print(ex)

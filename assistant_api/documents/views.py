@@ -19,9 +19,7 @@ class DocumentDetail(APIView):
             from wsgiref.util import FileWrapper
             from django.http import HttpResponse
             path = request.GET["path"]
-            get_document(path)
-            with open("file/file.pdf", 'r') as f:
-                file_data = f.read()
+            file_data = get_document(path)
 
             response = HttpResponse(file_data, content_type='application/pdf')
             response['Content-Disposition'] = 'attachment; filename="file.pdf"'
