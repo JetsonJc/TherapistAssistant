@@ -8,6 +8,7 @@ __all__ = (
     'ExerciseDocSerializer',
     'ExerciseUpdateSerializer',
     'ExerciseRequestSerializer',
+    'ExerciseRequestUpdateSerializer',
 )
 
 class ExerciseListSerializer(serializers.ModelSerializer):
@@ -33,4 +34,14 @@ class ExerciseUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exercise
         exclude = ('id',)
+
+
+class ExerciseRequestUpdateSerializer(serializers.ModelSerializer):
+    document = serializers.FileField(required=False)
+    video = serializers.FileField(required=False)
+    name = serializers.CharField(required=False)
+    descripcion = serializers.CharField(required=False)
+    class Meta:
+        model = Exercise
+        exclude = ('id', 'path_video', 'path_points')
         
