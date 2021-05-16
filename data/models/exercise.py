@@ -1,7 +1,7 @@
 from django.db import models
 
 class Exercise(models.Model):
-    id = models.AutoField(
+    id = models.IntegerField(
         help_text="Identificador de la tabla.",
         primary_key=True
     )

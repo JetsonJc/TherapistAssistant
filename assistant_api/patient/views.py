@@ -1,7 +1,10 @@
+from datetime import date
 from drf_yasg2 import openapi
 from drf_yasg2.utils import swagger_auto_schema
+from django.db import transaction
 from django.http import Http404
 from django.utils.decorators import method_decorator
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -16,6 +19,11 @@ from utility.pagination import (
     Paginator,
 )
 from utility.serializers import PaginatorSerializer
+from utility.storage import (
+    post_document,
+    delete_document,
+)
+from utility.constant import PATH_PATIENT_RESULTS
 
 
 @method_decorator(
@@ -37,18 +45,38 @@ class PatientResultsList(ListAPIView, PaginationHandlerMixin):
 
 
 class PatientResultsCreate(APIView):
+    def _get_object(self, id):
+        try:
+            return PatientRoutine.objects.get(pk=id)
+        except PatientRoutine.DoesNotExist:
+            raise Http404
+
     @swagger_auto_schema(
-        request_body=PatientResultsInsertSerializer,
+        request_body=PatientResultsInsertRequestSerializer,
         responses={
             status.HTTP_201_CREATED: 'If the request was successful, nothing is returned.'
         }
     )
     def post(self, request, format=None):
-        serializer = PatientResultsInsertSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = PatientResultsInsertRequestSerializer(data=request.data)
+            if serializer.is_valid():
+                with transaction.atomic():
+                    patient = self._get_object(request.data["patient_routine"])
+                    full_date = date.today().strftime("%d%m%Y")
+                    video = request.FILES['video']
+                    points = request.FILES['points']
+                    feedback = request.FILES['feedback']
+                    request.data["path_video"] = post_document(f'{PATH_PATIENT_RESULTS}{str(patient.id)}/{full_date}/video', video)
+                    request.data["path_points"] = post_document(f'{PATH_PATIENT_RESULTS}{str(patient.id)}/{full_date}/points', points)
+                    request.data["path_feedback"] = post_document(f'{PATH_PATIENT_RESULTS}{str(patient.id)}/{full_date}/feedback', feedback)
+                    serializer = PatientResultsInsertSerializer(data=request.data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as err:
+            raise ValidationError(err.args)
 
 
 class PatientResultsDetail(APIView):
@@ -59,7 +87,7 @@ class PatientResultsDetail(APIView):
         try:
             return ResultExercise.objects.get(pk=result_exercise_id)
         except ResultExercise.DoesNotExist:
-            raise Http404
+            raise ValidationError("The requested exercise does not exist.")
 
 
     @swagger_auto_schema(
@@ -74,18 +102,39 @@ class PatientResultsDetail(APIView):
 
 
     @swagger_auto_schema(
-        request_body=PatientResultsUpdateSerializer,
+        request_body=PatientResultsRequestUpdateSerializer,
         responses={
             status.HTTP_204_NO_CONTENT: 'If the request was successful, nothing is returned.'
         }
     )
     def patch(self, request, result_exercise_id, format=None):
-        patient_routines = self.get_object(result_exercise_id)
-        serializer = PatientResultsUpdateSerializer(patient_routines, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = PatientResultsRequestUpdateSerializer(data=request.data)
+            if serializer.is_valid():
+                with transaction.atomic():
+                    patient_results = self.get_object(result_exercise_id)
+                    if 'video' in request.FILES:
+                        video = request.FILES['video']
+                        path_video = str(patient_results.path_video).split('.')[0]
+                        delete_document(patient_results.path_video)
+                        request.data["path_video"] = post_document(path_video, video)
+                    if 'points' in request.FILES:
+                        points = request.FILES['points']
+                        path_points = str(patient_results.path_points).split('.')[0]
+                        delete_document(patient_results.path_points)
+                        request.data["path_points"] = post_document(path_points, points)
+                    if 'feedback' in request.FILES:
+                        path_feedback = str(patient_results.path_feedback).split('.')[0]
+                        feedback = request.FILES['feedback']
+                        delete_document(patient_results.path_feedback)
+                        request.data["path_feedback"] = post_document(path_feedback, feedback)
+                    serializer = PatientResultsUpdateSerializer(patient_results, data=request.data, partial=True)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(status=status.HTTP_204_NO_CONTENT)
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as err:
+            raise ValidationError(err)
 
 
     @swagger_auto_schema(
@@ -94,9 +143,16 @@ class PatientResultsDetail(APIView):
         }
     )
     def delete(self, request, result_exercise_id, format=None):
-        patient_results = self.get_object(result_exercise_id)
-        patient_results.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            with transaction.atomic():
+                patient_results = self.get_object(result_exercise_id)
+                delete_document(patient_results.path_video)
+                delete_document(patient_results.path_points)
+                delete_document(patient_results.path_feedback)
+                patient_results.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as err:
+            raise ValidationError(err.args)
 
 
 @method_decorator(
