@@ -1,3 +1,4 @@
+from django.db.models import fields
 from rest_framework import serializers
 from data.models import (
     ResultExercise,
@@ -19,6 +20,7 @@ __all__ = (
     'PatientResultsDocSerializer',
     'PatientRoutinesDocSerializer',
     'PatientResultsInsertRequestSerializer',
+    'PatientResultsRequestUpdateSerializer',
 )
 
 
@@ -52,7 +54,13 @@ class PatientResultsInsertRequestSerializer(serializers.ModelSerializer):
 class PatientResultsUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ResultExercise
-        exclude = ('id', 'patient_routine', 'exercise')
+        fields = ('path_video', 'path_points', 'path_feedback')
+
+
+class PatientResultsRequestUpdateSerializer(serializers.Serializer):
+    video = serializers.FileField(required=False, help_text="Video del ejercicio.")
+    points =  serializers.FileField(required=False, help_text="Points(JSON) del ejercicio.")
+    feedback =  serializers.FileField(required=False, help_text="Feedback(JSON) del ejercicio.")
 
 
 class PatientRoutinesListSerializer(serializers.ModelSerializer):

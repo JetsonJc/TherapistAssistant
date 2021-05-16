@@ -87,7 +87,7 @@ class PatientResultsDetail(APIView):
         try:
             return ResultExercise.objects.get(pk=result_exercise_id)
         except ResultExercise.DoesNotExist:
-            raise Http404
+            raise ValidationError("The requested exercise does not exist.")
 
 
     @swagger_auto_schema(
@@ -102,18 +102,39 @@ class PatientResultsDetail(APIView):
 
 
     @swagger_auto_schema(
-        request_body=PatientResultsUpdateSerializer,
+        request_body=PatientResultsRequestUpdateSerializer,
         responses={
             status.HTTP_204_NO_CONTENT: 'If the request was successful, nothing is returned.'
         }
     )
     def patch(self, request, result_exercise_id, format=None):
-        patient_routines = self.get_object(result_exercise_id)
-        serializer = PatientResultsUpdateSerializer(patient_routines, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = PatientResultsRequestUpdateSerializer(data=request.data)
+            if serializer.is_valid():
+                with transaction.atomic():
+                    patient_results = self.get_object(result_exercise_id)
+                    if 'video' in request.FILES:
+                        video = request.FILES['video']
+                        path_video = str(patient_results.path_video).split('.')[0]
+                        delete_document(patient_results.path_video)
+                        request.data["path_video"] = post_document(path_video, video)
+                    if 'points' in request.FILES:
+                        points = request.FILES['points']
+                        path_points = str(patient_results.path_points).split('.')[0]
+                        delete_document(patient_results.path_points)
+                        request.data["path_points"] = post_document(path_points, points)
+                    if 'feedback' in request.FILES:
+                        path_feedback = str(patient_results.path_feedback).split('.')[0]
+                        feedback = request.FILES['feedback']
+                        delete_document(patient_results.path_feedback)
+                        request.data["path_feedback"] = post_document(path_feedback, feedback)
+                    serializer = PatientResultsUpdateSerializer(patient_results, data=request.data, partial=True)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(status=status.HTTP_204_NO_CONTENT)
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as err:
+            raise ValidationError(err)
 
 
     @swagger_auto_schema(

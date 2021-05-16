@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.http import Http404
 from drf_yasg2.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
